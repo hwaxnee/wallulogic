@@ -1,0 +1,3 @@
+-- 이미 Supabase에 생성한 RPC를 문서화하기 위한 파일입니다.
+-- 현재 DB에는 get_random_puzzle, check_puzzle_answer, complete_puzzle가 생성되어 있어야 합니다.
+-- 운영 전에는 get_random_puzzle의 target_user_id를 제거하고 auth.uid()를 내부에서 사용하도록 강화하는 것을 권장합니다.
