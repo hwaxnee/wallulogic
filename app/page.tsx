@@ -32,7 +32,34 @@ export default function Home(){
  {screen==='home'&&<section className="home page"><h1>월루로직</h1><img src="/illustrations/home-cat.png" alt=""/><button className="primary" onClick={()=>setScreen('guide')}>월루 시작 →</button></section>}
  {screen==='guide'&&<section className="page guide"><button className="x" onClick={()=>setScreen('levels')}>×</button><h2>네모로직, 이렇게 풀어요</h2><img src="/illustrations/guide-cat.png" alt=""/><ol><li><b>숫자 힌트를 확인하세요</b><p>각 숫자는 연속해서 채워야 하는 칸의 개수예요.</p></li><li><b>칸을 채우거나 X로 표시하세요</b><p>정답 칸은 채우고 빈칸은 X로 표시해요.</p></li><li><b>모든 조건을 맞추면 완료</b><p>완성된 네모로직 그림이 결과에 나타나요.</p></li></ol><button className="primary" onClick={()=>setScreen('levels')}>확인했어요</button></section>}
  {screen==='levels'&&<section className="page"><h2>난이도를 선택하세요</h2><div className="levels">{(Object.keys(LEVELS) as Difficulty[]).map(k=><button key={k} onClick={()=>load(k)}><img src={art[k]} alt=""/><span><b>{LEVELS[k].title}</b><small>{LEVELS[k].description}</small>{LEVELS[k].pcOnly&&<em>PC 전용</em>}</span><strong>›</strong></button>)}</div><p className="notice">{notice}</p></section>}
- {screen==='game'&&puzzle&&<section className="page game"><div className="gamehead"><button onClick={()=>setScreen('levels')}>←</button><span><b>{no(puzzle.puzzle_no)}</b><small>{LEVELS[puzzle.difficulty].title}</small></span><time>{time(seconds)}</time></div><div className="boardscroll"><div className="boardwrap" style={{'--r':puzzle.rows,'--c':puzzle.cols} as React.CSSProperties}><div/><div className="colh">{puzzle.column_hints.map((h,i)=><div key={i}>{h.map((n,j)=><span key={j}>{n}</span>)}</div>)}</div><div className="rowh">{puzzle.row_hints.map((h,i)=><div key={i}>{h.map((n,j)=><span key={j}>{n}</span>)}</div>)}</div><div className="board">{grid.map((r,ri)=>r.map((v,ci)=><button key={`${ri}-${ci}`} className={v===1?'filled':v===2?'cross':''} onPointerDown={e=>{e.preventDefault();down(ri,ci)}} onPointerEnter={()=>drag&&cell(ri,ci,dragValue.current)}/>))}</div></div></div><div className="tools"><button className={tool===1?'active':''} onClick={()=>setTool(1)}>■ 채우기</button><button className={tool===2?'active':''} onClick={()=>setTool(2)}>× X 표시</button><button onClick={()=>{const p=history.at(-1);if(p){setGrid(p);setHistory(h=>h.slice(0,-1))}}}>↶ 실행취소</button></div><p className="notice">{notice}</p><button className="primary" onClick={submit}>정답 확인</button></section>}
+ {screen==='game'&&puzzle&&<section className="page game"><div className="gamehead"><button onClick={()=>setScreen('levels')}>←</button><span><b>{no(puzzle.puzzle_no)}</b><small>{LEVELS[puzzle.difficulty].title}</small></span><time>{time(seconds)}</time></div><div className="boardscroll"><div className="boardwrap" style={{'--r':puzzle.rows,'--c':puzzle.cols} as React.CSSProperties}><div/><div className="colh">{puzzle.column_hints.map((h,i)=><div key={i}>{h.map((n,j)=><span key={j}>{n}</span>)}</div>)}</div><div className="rowh">{puzzle.row_hints.map((h,i)=><div key={i}>{h.map((n,j)=><span key={j}>{n}</span>)}</div>)}</div><div className="board">{grid.map((r,ri)=>r.map((v,ci)=><button key={`${ri}-${ci}`} className={v===1?'filled':v===2?'cross':''} onPointerDown={e=>{e.preventDefault();down(ri,ci)}} onPointerEnter={()=>drag&&cell(ri,ci,dragValue.current)}/>))}</div></div></div><div className="<div className="tools">
+  <button
+    className={tool === 1 ? 'active' : ''}
+    onClick={() => setTool(1)}
+  >
+    ■ 채우기
+  </button>
+
+  <button
+    className={tool === 2 ? 'active' : ''}
+    onClick={() => setTool(2)}
+  >
+    × 표시
+  </button>
+
+  <button
+    onClick={() => {
+      const previous = history.at(-1);
+
+      if (previous) {
+        setGrid(previous);
+        setHistory((items) => items.slice(0, -1));
+      }
+    }}
+  >
+    ↶ 실행취소
+  </button>
+</div><p className="notice">{notice}</p><button className="primary" onClick={submit}>정답 확인</button></section>}
  {screen==='result'&&puzzle&&<section className="page result"><h2>완성!</h2><Pixel data={grid.map(r=>r.map(v=>v===1?1:0))} large/><h3>{answerName}</h3><p>{no(puzzle.puzzle_no)} · {LEVELS[puzzle.difficulty].title}</p><div className="stats"><span>소요 시간<b>{time(seconds)}</b></span>{bestTime!==null&&<span>최고 기록<b>{time(bestTime)}</b></span>}</div><button className="primary" onClick={()=>load(puzzle.difficulty)}>같은 난이도 새 문제</button><button className="secondary" onClick={()=>openRanking('puzzle')}>이 문제 랭킹</button><button className="secondary" onClick={()=>navigator.clipboard.writeText(`${location.origin}/?puzzle=${puzzle.puzzle_no}`)}>문제 공유</button></section>}
  {screen==='my'&&<section className="page my"><h2>내 월루</h2>{dash&&<><label>닉네임<div className="nick"><input value={nickname} maxLength={12} onChange={e=>setNickname(e.target.value)}/><button onClick={saveNick}>저장</button></div></label><small>{dash.email}</small><div className="stats"><span>완료한 문제<b>{dash.completed_count}</b></span><span>기록 합계<b>{time(dash.total_play_seconds)}</b></span></div><h3>난이도별 완료</h3><div className="chips"><i>초보자 {dash.beginner_count}</i><i>입문자 {dash.novice_count}</i><i>숙련자 {dash.skilled_count}</i><i>고수 {dash.advanced_count}</i><i>초고수 {dash.expert_count}</i></div><h3>완성한 그림</h3><div className="collection">{collection.map(x=><article key={x.puzzle_no}><Pixel data={x.solution}/><b>{x.answer_name}</b><small>{no(x.puzzle_no)} · {time(x.best_time_seconds)}</small></article>)}</div></>}</section>}
  {screen==='ranking'&&<section className="page ranking"><h2>{rankMode==='weekly'?'주간 랭킹':`${puzzle?no(puzzle.puzzle_no):''} 랭킹`}</h2><div className="tabs"><button onClick={()=>openRanking('weekly')}>주간 완료</button>{puzzle&&<button onClick={()=>openRanking('puzzle')}>현재 문제</button>}</div><ol>{ranks.map(x=><li key={`${x.rank}-${x.nickname}`}><strong>{x.rank}</strong><b>{x.nickname}</b><span>{x.best_time_seconds!=null?time(x.best_time_seconds):`${x.completed_count}개`}</span></li>)}</ol>{!ranks.length&&<p>아직 랭킹 기록이 없어요.</p>}</section>}
