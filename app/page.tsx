@@ -34,6 +34,9 @@ export default function Home() {
   const [seconds,setSeconds] = useState(0);
   const [drag,setDrag] = useState(false);
   const [cursor,setCursor] = useState({row:0,col:0});
+  const [isCoarsePointer,setIsCoarsePointer] = useState(false);
+  const moveDelayRef = useRef<number|null>(null);
+  const moveIntervalRef = useRef<number|null>(null);
   const [cellSize,setCellSize] = useState(32);
   const [rowHintWidth,setRowHintWidth] = useState(52);
   const [columnHintHeight,setColumnHintHeight] = useState(52);
@@ -53,6 +56,14 @@ export default function Home() {
   }, [supabase]);
 
   useEffect(() => {
+    const media = window.matchMedia('(pointer: coarse)');
+    const update = () => setIsCoarsePointer(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+
+  useEffect(() => {
     if (screen !== 'game') return;
     const timer = window.setInterval(() => setSeconds(v => v + 1), 1000);
     return () => window.clearInterval(timer);
@@ -63,6 +74,8 @@ export default function Home() {
     window.addEventListener('pointerup', stop);
     return () => window.removeEventListener('pointerup', stop);
   }, []);
+
+  useEffect(() => () => stopCursorRepeat(), []);
 
   useEffect(() => {
     if (screen !== 'game' || !puzzle) return;
@@ -75,7 +88,7 @@ export default function Home() {
       const computedRowHint = Math.max(34, maxRowHints * (mobile ? 14 : 17) + 10);
       const computedColumnHint = Math.max(32, maxColumnHints * (mobile ? 13 : 16) + 8);
       const horizontalOutside = mobile ? 24 : Math.max(40, viewportWidth - 500);
-      const reservedVertical = mobile ? 62 + 50 + 50 + 18 + 46 + 30 : 62 + 54 + 62 + 20 + 54 + 60;
+      const reservedVertical = mobile ? 62 + 50 + 118 + 14 + 44 + 18 : 62 + 54 + 62 + 20 + 54 + 60;
       const byWidth = (viewportWidth - horizontalOutside - computedRowHint - 4) / puzzle.cols;
       const byHeight = (viewportHeight - reservedVertical - computedColumnHint - 4) / puzzle.rows;
       const next = Math.floor(Math.min(byWidth, byHeight, mobile ? 64 : 36));
@@ -147,6 +160,40 @@ export default function Home() {
   }
   function down(r:number,c:number) { const v:CellState=grid[r][c]===tool?0:tool; dragValue.current=v; setDrag(true); cell(r,c,v); }
 
+  function cycleCell(r:number,c:number) {
+    const current = grid[r]?.[c] ?? 0;
+    cell(r,c,((current + 1) % 3) as CellState);
+  }
+
+  function toggleCursorValue(value:1|2) {
+    const current = grid[cursor.row]?.[cursor.col] ?? 0;
+    cell(cursor.row,cursor.col,current === value ? 0 : value);
+    setTool(value);
+  }
+
+  function moveCursor(dr:number,dc:number) {
+    if (!puzzle) return;
+    setCursor(previous => ({
+      row:Math.max(0,Math.min(puzzle.rows-1,previous.row+dr)),
+      col:Math.max(0,Math.min(puzzle.cols-1,previous.col+dc))
+    }));
+  }
+
+  function stopCursorRepeat() {
+    if (moveDelayRef.current !== null) window.clearTimeout(moveDelayRef.current);
+    if (moveIntervalRef.current !== null) window.clearInterval(moveIntervalRef.current);
+    moveDelayRef.current=null;
+    moveIntervalRef.current=null;
+  }
+
+  function startCursorRepeat(dr:number,dc:number) {
+    stopCursorRepeat();
+    moveCursor(dr,dc);
+    moveDelayRef.current=window.setTimeout(() => {
+      moveIntervalRef.current=window.setInterval(() => moveCursor(dr,dc),90);
+    },320);
+  }
+
   async function submit() {
     if (!puzzle) return;
     setLoading(true);
@@ -169,7 +216,7 @@ export default function Home() {
   {screen==='home'&&<section className="home page"><h1>월루로직</h1><img src="/illustrations/home-cat.png" alt=""/><button className="primary" onClick={()=>setScreen('guide')}>월루 시작 →</button></section>}
   {screen==='guide'&&<section className="page guide"><button className="x" onClick={()=>setScreen('levels')}>×</button><h2>네모로직, 이렇게 풀어요</h2><img src="/illustrations/guide-cat.png" alt=""/><ol><li><b>숫자 힌트를 확인하세요</b><p>각 숫자는 연속해서 채워야 하는 칸의 개수예요.</p></li><li><b>칸을 채우거나 X로 표시하세요</b><p>정답 칸은 채우고 빈칸은 X로 표시해요.</p></li><li><b>모든 조건을 맞추면 완료</b><p>완성된 네모로직 그림이 결과에 나타나요.</p></li></ol><button className="primary" onClick={()=>setScreen('levels')}>확인했어요</button></section>}
   {screen==='levels'&&<section className="page"><h2>난이도를 선택하세요</h2><div className="levels">{(Object.keys(LEVELS) as Difficulty[]).map(k=><button key={k} onClick={()=>load(k)}><img src={art[k]} alt=""/><span><b>{LEVELS[k].title}</b><small>{LEVELS[k].description}</small>{LEVELS[k].pcOnly&&<em>PC 전용</em>}</span><strong>›</strong></button>)}</div><p className="notice">{notice}</p></section>}
-  {screen==='game'&&puzzle&&<section className="page game"><div className="gamehead"><button onClick={()=>setScreen('levels')}>←</button><span><b>{no(puzzle.puzzle_no)}</b><small>{LEVELS[puzzle.difficulty].title}</small></span><time>{time(seconds)}</time></div><div className="boardscroll"><div className="boardwrap" style={boardStyle}><div/><div className="colh">{puzzle.column_hints.map((h,i)=><div key={i}>{h.map((n,j)=><span key={j}>{n}</span>)}</div>)}</div><div className="rowh">{puzzle.row_hints.map((h,i)=><div key={i}>{h.map((n,j)=><span key={j}>{n}</span>)}</div>)}</div><div className="board">{grid.map((r,ri)=>r.map((v,ci)=><button key={`${ri}-${ci}`} className={[v===1?'filled':v===2?'cross':'',ri===cursor.row&&ci===cursor.col?'cursor':'',((ci+1)%5===0&&ci<puzzle.cols-1)?'major-right':'',((ri+1)%5===0&&ri<puzzle.rows-1)?'major-bottom':''].filter(Boolean).join(' ')} onPointerDown={e=>{e.preventDefault();setCursor({row:ri,col:ci});down(ri,ci)}} onPointerEnter={()=>drag&&cell(ri,ci,dragValue.current)}/>))}</div></div></div><div className="tools"><button className={tool===1?'active':''} onClick={()=>setTool(1)}>■ 채우기</button><button className={tool===2?'active':''} onClick={()=>setTool(2)}>× 표시</button><button onClick={()=>{const p=history[history.length-1];if(p){setGrid(p);setHistory(h=>h.slice(0,-1))}}}>↶ 실행취소</button></div><p className="keyboard-help">방향키: 이동 · A: 채우기 · S: X 표시 · X/Z/Space: 지우기</p><p className="notice">{notice}</p><button className="primary" onClick={submit}>정답 확인</button></section>}
+  {screen==='game'&&puzzle&&<section className="page game"><div className="gamehead"><button onClick={()=>setScreen('levels')}>←</button><span><b>{no(puzzle.puzzle_no)}</b><small>{LEVELS[puzzle.difficulty].title}</small></span><time>{time(seconds)}</time></div><div className="boardscroll"><div className="boardwrap" style={boardStyle}><div/><div className="colh">{puzzle.column_hints.map((h,i)=><div key={i}>{h.map((n,j)=><span key={j}>{n}</span>)}</div>)}</div><div className="rowh">{puzzle.row_hints.map((h,i)=><div key={i}>{h.map((n,j)=><span key={j}>{n}</span>)}</div>)}</div><div className="board">{grid.map((r,ri)=>r.map((v,ci)=><button type="button" aria-label={`${ri+1}행 ${ci+1}열`} key={`${ri}-${ci}`} className={[v===1?'filled':v===2?'cross':'',ri===cursor.row&&ci===cursor.col?'cursor':'',((ci+1)%5===0&&ci<puzzle.cols-1)?'major-right':'',((ri+1)%5===0&&ri<puzzle.rows-1)?'major-bottom':''].filter(Boolean).join(' ')} onPointerDown={e=>{e.preventDefault();setCursor({row:ri,col:ci});if(isCoarsePointer)cycleCell(ri,ci);else down(ri,ci)}} onPointerEnter={()=>!isCoarsePointer&&drag&&cell(ri,ci,dragValue.current)}/>))}</div></div></div><div className="tools desktop-tools"><button className={tool===1?'active':''} onClick={()=>setTool(1)}>■ 채우기</button><button className={tool===2?'active':''} onClick={()=>setTool(2)}>X 표시</button><button onClick={()=>{const p=history[history.length-1];if(p){setGrid(p);setHistory(h=>h.slice(0,-1))}}}>↶ 실행취소</button></div><div className="mobile-game-controls" aria-label="모바일 퍼즐 조작부"><div className="mobile-dpad"><button type="button" className="dpad-up" aria-label="위로 이동" onPointerDown={e=>{e.preventDefault();startCursorRepeat(-1,0)}} onPointerUp={stopCursorRepeat} onPointerCancel={stopCursorRepeat} onPointerLeave={stopCursorRepeat}>↑</button><button type="button" className="dpad-left" aria-label="왼쪽으로 이동" onPointerDown={e=>{e.preventDefault();startCursorRepeat(0,-1)}} onPointerUp={stopCursorRepeat} onPointerCancel={stopCursorRepeat} onPointerLeave={stopCursorRepeat}>←</button><span className="dpad-center" aria-hidden="true"/><button type="button" className="dpad-right" aria-label="오른쪽으로 이동" onPointerDown={e=>{e.preventDefault();startCursorRepeat(0,1)}} onPointerUp={stopCursorRepeat} onPointerCancel={stopCursorRepeat} onPointerLeave={stopCursorRepeat}>→</button><button type="button" className="dpad-down" aria-label="아래로 이동" onPointerDown={e=>{e.preventDefault();startCursorRepeat(1,0)}} onPointerUp={stopCursorRepeat} onPointerCancel={stopCursorRepeat} onPointerLeave={stopCursorRepeat}>↓</button></div><div className="mobile-actions"><button type="button" className={tool===1?'active':''} onClick={()=>toggleCursorValue(1)}><strong>■</strong><span>채우기</span></button><button type="button" className={tool===2?'active':''} onClick={()=>toggleCursorValue(2)}><strong>X</strong></button></div></div><p className="keyboard-help">방향키: 이동 · A: 채우기 · S: X 표시 · X/Z/Space: 지우기</p><p className="notice">{notice}</p><button className="primary" onClick={submit}>정답 확인</button></section>}
   {screen==='result'&&puzzle&&<section className="page result"><h2>완성!</h2><Pixel data={grid.map(r=>r.map(v=>v===1?1:0))} large/><h3>{answerName}</h3><p>{no(puzzle.puzzle_no)} · {LEVELS[puzzle.difficulty].title}</p><div className="stats"><span>소요 시간<b>{time(seconds)}</b></span>{bestTime!==null&&<span>최고 기록<b>{time(bestTime)}</b></span>}</div><button className="primary" onClick={()=>load(puzzle.difficulty)}>같은 난이도 새 문제</button><button className="secondary" onClick={()=>openRanking('puzzle')}>이 문제 랭킹</button><button className="secondary" onClick={()=>navigator.clipboard.writeText(`${location.origin}/?puzzle=${puzzle.puzzle_no}`)}>문제 공유</button></section>}
   {screen==='my'&&<section className="page my"><h2>내 월루</h2>{dash&&<><label>닉네임<div className="nick"><input value={nickname} maxLength={12} onChange={e=>setNickname(e.target.value)}/><button onClick={saveNick}>저장</button></div></label><small>{dash.email}</small><div className="stats"><span>완료한 문제<b>{dash.completed_count}</b></span><span>기록 합계<b>{time(dash.total_play_seconds)}</b></span></div><h3>난이도별 완료</h3><div className="chips"><i>초보자 {dash.beginner_count}</i><i>입문자 {dash.novice_count}</i><i>숙련자 {dash.skilled_count}</i><i>고수 {dash.advanced_count}</i><i>초고수 {dash.expert_count}</i></div><h3>완성한 그림</h3><div className="collection">{collection.map(x=><article key={x.puzzle_no}><Pixel data={x.solution}/><b>{x.answer_name}</b><small>{no(x.puzzle_no)} · {time(x.best_time_seconds)}</small></article>)}</div></>}</section>}
   {screen==='ranking'&&<section className="page ranking"><h2>{rankMode==='weekly'?'주간 랭킹':`${puzzle?no(puzzle.puzzle_no):''} 랭킹`}</h2><div className="tabs"><button onClick={()=>openRanking('weekly')}>주간 완료</button>{puzzle&&<button onClick={()=>openRanking('puzzle')}>현재 문제</button>}</div><ol>{ranks.map(x=><li key={`${x.rank}-${x.nickname}`}><strong>{x.rank}</strong><b>{x.nickname}</b><span>{x.best_time_seconds!=null?time(x.best_time_seconds):`${x.completed_count}개`}</span></li>)}</ol>{!ranks.length&&<p>아직 랭킹 기록이 없어요.</p>}</section>}
