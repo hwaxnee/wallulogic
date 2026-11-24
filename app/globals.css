@@ -69,3 +69,48 @@
   .mobile-dpad{grid-template-columns:repeat(3,39px)}
   .mobile-dpad button{width:39px}
 }
+
+/* Compact icon-only mobile input buttons */
+@media(max-width:699px) and (pointer:coarse){
+  .mobile-game-controls{
+    grid-template-columns:minmax(134px,1fr) 112px;
+    justify-content:center;
+    gap:10px;
+    min-height:100px;
+    max-width:300px;
+    width:100%;
+    margin:0 auto;
+    padding:2px 0;
+  }
+  .mobile-actions{
+    display:grid;
+    grid-template-columns:repeat(2,52px);
+    grid-template-rows:52px;
+    justify-content:center;
+    align-items:center;
+    gap:8px;
+  }
+  .mobile-actions button{
+    width:52px;
+    height:52px;
+    min-height:52px;
+    padding:0;
+    border-radius:15px;
+    flex:none;
+  }
+  .mobile-actions button strong{
+    display:block;
+    font-size:23px;
+    line-height:1;
+    margin:0;
+  }
+}
+@media(max-width:360px) and (pointer:coarse){
+  .mobile-game-controls{
+    grid-template-columns:126px 104px;
+    gap:7px;
+    max-width:276px;
+  }
+  .mobile-actions{grid-template-columns:repeat(2,48px);gap:7px}
+  .mobile-actions button{width:48px;height:48px;min-height:48px}
+}
