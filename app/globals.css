@@ -140,3 +140,83 @@
   .desktop-arrow-pad button:nth-child(4){grid-column:3;grid-row:2}
   .keyboard-help{display:none}
 }
+
+/* PC compact keyboard legend: prioritize puzzle area */
+@media(min-width:700px) and (pointer:fine){
+  .desktop-key-controls{
+    grid-template-columns:auto auto;
+    gap:36px;
+    margin:7px auto 3px;
+  }
+  .desktop-key-actions{gap:11px}
+  .desktop-key-actions>div,.desktop-key-move{gap:4px;font-size:11px}
+  .desktop-key-actions button,.desktop-arrow-pad button{
+    width:32px;
+    height:32px;
+    border-width:1.5px;
+    border-radius:8px;
+    font-size:16px;
+  }
+  .desktop-arrow-pad{
+    grid-template-columns:repeat(3,32px);
+    grid-template-rows:repeat(2,32px);
+    gap:4px;
+  }
+  .boardscroll{
+    max-height:calc(100dvh - 210px);
+    margin:6px auto 5px;
+  }
+  .game{padding-top:10px;padding-bottom:10px}
+  .gamehead{min-height:42px}
+  .game .notice{margin:4px 0;min-height:14px;font-size:11px}
+  .game>.primary{padding:11px;min-height:44px}
+}
+
+/* Mobile: restore vertical input buttons, wide thumb-friendly shape */
+@media(max-width:699px) and (pointer:coarse){
+  .mobile-game-controls{
+    grid-template-columns:minmax(134px,1fr) 120px;
+    justify-content:center;
+    align-items:center;
+    gap:12px;
+    max-width:292px;
+    width:100%;
+    min-height:112px;
+    margin:0 auto;
+    padding:3px 0;
+  }
+  .mobile-actions{
+    display:grid;
+    grid-template-columns:120px;
+    grid-template-rows:52px 52px;
+    justify-content:center;
+    align-items:center;
+    gap:7px;
+  }
+  .mobile-actions button{
+    width:120px;
+    height:52px;
+    min-height:52px;
+    padding:0;
+    border-radius:15px;
+  }
+  .mobile-actions button strong{
+    display:block;
+    margin:0;
+    font-size:23px;
+    line-height:1;
+  }
+}
+@media(max-width:360px) and (pointer:coarse){
+  .mobile-game-controls{
+    grid-template-columns:126px 108px;
+    gap:7px;
+    max-width:264px;
+  }
+  .mobile-actions{
+    grid-template-columns:108px;
+    grid-template-rows:47px 47px;
+    gap:6px;
+  }
+  .mobile-actions button{width:108px;height:47px;min-height:47px}
+}
