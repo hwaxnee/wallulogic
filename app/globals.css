@@ -220,3 +220,36 @@
   }
   .mobile-actions button{width:108px;height:47px;min-height:47px}
 }
+
+/* Mobile: 1.5x wider direction keys, height unchanged */
+@media(max-width:699px) and (pointer:coarse){
+  .mobile-game-controls{
+    grid-template-columns:190px 120px;
+    gap:10px;
+    max-width:326px;
+  }
+  .mobile-dpad{
+    grid-template-columns:repeat(3,63px);
+    grid-template-rows:repeat(3,34px);
+    gap:3px;
+  }
+  .mobile-dpad button{
+    width:63px;
+    height:34px;
+    border-radius:11px;
+  }
+  .dpad-center{width:12px;height:12px}
+}
+@media(max-width:360px) and (pointer:coarse){
+  .mobile-game-controls{
+    grid-template-columns:176px 108px;
+    gap:6px;
+    max-width:294px;
+  }
+  .mobile-dpad{
+    grid-template-columns:repeat(3,58px);
+    grid-template-rows:repeat(3,34px);
+    gap:2px;
+  }
+  .mobile-dpad button{width:58px;height:34px}
+}
